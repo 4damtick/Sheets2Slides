@@ -1,6 +1,7 @@
 <p align="center">
-  <img src="./docs/Sheet2Slides_logo.png" alt="Sheets2Slides Logo" width="120" />
+  <img src="./docs/Sheet2Slides_logo.png" alt="Sheets2Slides Logo" width="500" />
 </p>
+
 # Sheets2Slides
 
 Sheets2Slides keeps Google Slides visuals synced with live ranges from Google Sheets.
