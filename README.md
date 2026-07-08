@@ -10,7 +10,7 @@ Instead of re-exporting screenshots, re-uploading images, and manually replacing
 
 ## What Problem It Solves
 
-Teams often build presentations from spreadsheet-driven tables, KPI snapshots, forecasts, or reporting views.
+Teams often build presentations from spreadsheet-driven tables, KPI snapshots, forecasts, or reporting views, however, currently Google has a limit of 400 cells.
 
 The usual workflow is painful:
 
@@ -21,8 +21,8 @@ The usual workflow is painful:
 
 Sheets2Slides solves that by separating the workflow into two parts:
 
-1. A Google Sheets addon that exports reusable sync configs.
-2. A Google Slides addon that links slide images to those configs and refreshes them on demand.
+1. A Google Sheets add-on that exports reusable sync configs.
+2. A Google Slides add-on that links slide images to those configs and refreshes them on demand.
 
 ## Demo
 
