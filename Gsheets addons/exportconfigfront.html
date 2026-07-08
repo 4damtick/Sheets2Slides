@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 0;
+      margin: 0;
+      background: #f5f5f5;
+    }
+    .hidden { display: none !important; }
+    
+    /* Config Setup View */
+    #configSetupView {
+      padding: 20px;
+    }
+    .setup-section {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      position: relative;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .setup-section.processing {
+      opacity: 0.7;
+    }
+    .setup-section.processing .btn-primary,
+    .setup-section.processing .btn-success,
+    .setup-section.processing .btn-warning {
+      background: #9aa0a6 !important;
+      color: #ffffff !important;
+    }
+    .setup-section.processing input {
+      background: #eeeeee;
+    }
+    .processing-overlay {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: rgba(245, 245, 245, 0.5);
+      z-index: 10;
+      border-radius: 8px;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 12px;
+      box-sizing: border-box;
+      color: #444;
+      font-weight: 600;
+    }
+    .setup-section.processing .processing-overlay {
+      display: flex;
+    }
+
+    .setup-lock-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: rgba(19, 28, 40, 0.34);
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    .setup-lock-overlay.active {
+      display: flex;
+    }
+
+    .setup-lock-card {
+      width: 100%;
+      max-width: 330px;
+      background: #ffffff;
+      border-radius: 12px;
+      border: 2px solid #d7e8ff;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
+      padding: 16px;
+      text-align: center;
+    }
+
+    .setup-lock-emoji {
+      font-size: 24px;
+      margin-bottom: 6px;
+      animation: setupPulse 1.1s ease-in-out infinite;
+    }
+
+    .setup-lock-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #1f3b64;
+      margin-bottom: 4px;
+    }
+
+    .setup-lock-message {
+      font-size: 12px;
+      color: #50627a;
+      line-height: 1.4;
+    }
+
+    @keyframes setupPulse {
+      0% { transform: scale(1); opacity: 0.85; }
+      50% { transform: scale(1.08); opacity: 1; }
+      100% { transform: scale(1); opacity: 0.85; }
+    }
+    
+    /* Full Export View */
+    #exportView {
+      padding: 15px;
+      min-height: 100vh;
+      height: auto;
+      overflow-y: auto;
+    }
+    .container {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+    
+    /* Common Styles */
+    button {
+      padding: 10px 20px;
+      margin: 5px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .btn-primary { background: #4285f4; color: white; }
+    .btn-success { background: #34a853; color: white; }
+    .btn-warning { background: #fbbc04; color: white; }
+    .btn-danger { background: #ea4335; color: white; }
+    
+    input[type="text"], input[type="number"], input[type="password"], select, textarea {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+      font-size: 13px;
+    }
+    
+    label {
+      display: block;
+      margin: 10px 0 5px 0;
+      font-weight: 600;
+      font-size: 13px;
+    }
+    
+    .info {
+      font-size: 12px;
+      color: #666;
+      margin: 5px 0;
+    }
+    
+    #status {
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 4px;
+      display: none;
+    }
+    .status.success { background: #d4edda; color: #155724; display: block; }
+    .status.error { background: #f8d7da; color: #721c24; display: block; }
+    .status.info { background: #d1ecf1; color: #0c5460; display: block; }
+    
+    h2 { margin-top: 0; color: #333; }
+    h3 { margin-top: 0; color: #555; font-size: 16px; }
+    
+    .divider {
+      border-top: 1px solid #ddd;
+      margin: 15px 0;
+    }
+    
+    .collapsible {
+      cursor: pointer;
+      padding: 10px;
+      background: #f8f9fa;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      user-select: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .collapsible:hover {
+      background: #e9ecef;
+    }
+    .collapsible-content {
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-top: none;
+      border-radius: 0 0 4px 4px;
+      background: #fafafa;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================ -->
+  <!-- VIEW 1: CONFIG SETUP (Required First) -->
+  <!-- ============================================ -->
+  <div id="configSetupView">
+    <div class="setup-section" id="setupSection">
+      <h2>⚙️ Config Sheet Setup</h2>
+      <p style="color: #666;">
+        Before you can use Sheets2Slides, you need to set up a centralized config sheet. 
+        This sheet stores all your configurations and enables the automation workflow.
+      </p>
+      
+      <div id="configSheetStatus" style="padding: 15px; background: #fff3cd; border-left: 4px solid #ff9800; border-radius: 4px; margin: 15px 0;">
+        <strong>Status:</strong> <span id="statusText">Checking...</span><br>
+        <span id="statusDetails" style="font-size: 12px; color: #666; margin-top: 5px; display: block;"></span>
+      </div>
+      
+      <div style="margin-bottom: 20px;">
+        <label>Config Sheet Link or ID:</label>
+        <input type="text" id="configSheetId" placeholder="Paste full Google Sheet link or spreadsheet ID">
+       <p class="info" style="margin-top: 5px; font-size: 11px; color: #666; line-height: 1.6;">
+      💡 <strong>Tip:</strong><br>
+      Paste the full sheet URL, or copy only the ID from this part of the URL:<br>
+      <code style="background: #f0f0f0; padding: 4px 8px; border-radius: 3px; font-size: 10px; word-break: break-all; display: block; margin-top: 4px;">
+        https://docs.google.com/.../d/<span style="background: #fff3cd; padding: 2px 4px; font-weight: bold;">SHEET_ID</span>/edit
+      </code>
+      </div>
+      
+      <div>
+        <button class="btn-success" id="createConfigBtn" onclick="createConfigSheet()" style="width: 100%;">
+          ✨ Create New Config Sheet
+        </button>
+      </div>
+      
+      <div class="divider"></div>
+      
+      <button class="btn-warning" onclick="proceedToExport()" id="proceedBtn" style="width: 100%; font-size: 16px;">
+        🖼️ Proceed to Big Table Config Export →
+      </button>
+      
+      <div id="status" class="hidden"></div>
+      <div class="processing-overlay" id="setupProcessingOverlay"></div>
+    </div>
+  </div>
+
+  <div id="setupLockOverlay" class="setup-lock-overlay" aria-live="polite" aria-busy="true">
+    <div class="setup-lock-card">
+      <div class="setup-lock-emoji">⏳✨</div>
+      <div class="setup-lock-title">Config Setup In Progress</div>
+      <div class="setup-lock-message" id="setupLockMessage">Please wait while we link your config sheet...</div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- VIEW 2: SIMPLIFIED CONFIG EXPORT -->
+  <!-- ============================================ -->
+  <div id="exportView" class="hidden">
+    <div class="container">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h2 style="margin: 0;">🖼️ Config Export</h2>
+        <div style="display:flex; gap:4px;">
+          <button onclick="loadSheetTabs()" style="padding: 5px 8px; font-size: 14px; background: #4285f4; color: white; cursor:pointer;" title="Refresh tabs and named ranges">🔄</button>
+          <button onclick="backToConfigSetup()" style="padding: 5px 8px; font-size: 14px; background: #666; color: white; cursor:pointer;" title="Config setup">⚙️</button>
+        </div>
+      </div>
+      
+      <div style="padding: 10px; background: #e8f5e9; border-radius: 4px; margin-top: 10px; font-size: 12px;">
+        ✅ Config Sheet: <strong id="linkedSheetName">-</strong> | 
+        <a href="#" id="openConfigLink" target="_blank">Open →</a>
+      </div>
+    </div>
+
+    <!-- Basic Settings -->
+    <div class="container">
+      <h3>📋 Basic Settings</h3>
+      
+      <label>Sheet Tab *</label>
+      <select id="sheetTab">
+        <option value="">Loading tabs...</option>
+      </select>
+      <p class="info">Select the sheet tab to export from.</p>
+      
+      <label>Cell Range *</label>
+      <div style="display:flex; gap:5px; align-items:center;">
+        <select id="namedRangeSelect" style="flex:1;">
+          <option value="">🔗 Select a named range</option>
+        </select>
+        <button id="rangeToggleBtn" onclick="toggleRangeMode()" style="white-space:nowrap; padding:4px 10px;" title="Switch to custom range entry">✏️</button>
+      </div>
+      <input type="text" id="cellRange" placeholder="e.g., A1:Z100" style="margin-top:4px; display:none;">
+      <div id="captureBtnContainer" style="display:none; margin-top:6px;">
+        <button id="captureBtn" class="btn-primary" onclick="captureSelection()" style="width:100%;">📍 Capture Selection</button>
+      </div>
+      <p class="info" id="rangeInfo">Select a named range, or click "Custom range" to enter a manual range.</p>
+
+      <label>Custom Names (Optional)</label>
+      <input type="text" id="customNames" placeholder="e.g., Sales Chart, Revenue Table">
+      <p class="info">Comma-separated. Leaves blank to auto-generate based on Sheet/Range name.</p>
+    </div>
+
+    <!-- Filter Features -->
+    <div class="container">
+      <h3>🔍 Filter Features (Optional)</h3>
+      <label>
+        <input type="checkbox" id="filterEnabled" onchange="toggleFilter()">
+        Enable Filtering
+      </label>
+      
+      <div id="filterSettings" class="hidden" style="margin-top: 10px;">
+        <p class="info" style="margin-top:0;">Add filter cells and load their dropdown options to select values.</p>
+        <div id="filterRowsContainer"></div>
+        <button id="addFilterRowBtn" onclick="addFilterRow()" style="margin-top:6px;">+ Add Filter Cell</button>
+      </div>
+    </div>
+
+    <!-- Advanced PNG Settings (Collapsible) -->
+    <div class="container">
+      <div class="collapsible" onclick="toggleAdvanced()">
+        <h3 style="margin: 0;">⚙️ Advanced Settings</h3>
+        <span id="advancedToggle">▼</span>
+      </div>
+      
+      <div id="advancedSettings" class="collapsible-content hidden">
+        <label>Conversion Method</label>
+        <select id="pngConversionMethod" onchange="togglePngMethod()">
+          <option value="internal">Internal API (Recommended)</option>
+          <option value="cloudconvert">CloudConvert</option>
+        </select>
+        <p class="info">Internal uses your shared bucket-based conversion worker.</p>
+        
+        <div id="internalApiSettings">
+          <div style="padding: 10px; background: #e3f2fd; border-left: 4px solid #2196f3; border-radius: 4px; margin-bottom: 15px;">
+            <strong>🔒 Authentication:</strong> Google Cloud IAM (Automatic)<br>
+            <span style="font-size: 12px; color: #666;">Uses your Google account credentials automatically</span>
+          </div>
+
+          <label>Input Bucket</label>
+          <input type="text" id="gcsInputBucket" placeholder="your-input-bucket">
+          <p class="info">Shared across both addons. PDFs are uploaded here for internal conversion.</p>
+
+          <label>Output Bucket</label>
+          <input type="text" id="gcsOutputBucket" placeholder="your-output-bucket">
+          <p class="info">Shared across both addons. Converted PNGs are downloaded from here.</p>
+          
+          <label>DPI (Resolution)</label>
+          <input type="number" id="pngDpi" value="300" min="72" max="600">
+          <p class="info">Default: 300 | Higher = better quality, larger file</p>
+          
+          <label>Quality</label>
+          <input type="number" id="pngQuality" value="90" min="1" max="100">
+          <p class="info">Default: 90 | Range: 1-100</p>
+          
+          <label>Background Color</label>
+          <input type="text" id="pngBackground" value="white" placeholder="white">
+          <p class="info">Default: white | Options: white, transparent, or hex color (#FFFFFF)</p>
+          
+          <label>
+            <input type="checkbox" id="pngAutoCrop" checked onchange="toggleAutoCrop()">
+            Auto Crop Whitespace
+          </label>
+          <p class="info">Automatically removes excess whitespace around the image</p>
+          
+          <div id="cropSettings" class="hidden">
+            <label>Manual Crop (pixels)</label>
+            <p class="info">Left, Top, Right, Bottom - use when auto crop is disabled</p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 5px;">
+              <input type="number" id="cropLeft" value="0" placeholder="Left">
+              <input type="number" id="cropTop" value="0" placeholder="Top">
+              <input type="number" id="cropRight" value="0" placeholder="Right">
+              <input type="number" id="cropBottom" value="0" placeholder="Bottom">
+            </div>
+          </div>
+        </div>
+        
+        <div id="cloudConvertSettings" class="hidden">
+          <label>CloudConvert API Key</label>
+          <input type="password" id="cloudConvertApiKey" placeholder="Your CloudConvert API key">
+          <p class="info">Shared across both addons and stored in the linked config sheet Settings tab.</p>
+          
+          <label>DPI (Resolution)</label>
+          <input type="number" id="cloudConvertDpi" value="300" min="72" max="600">
+          
+          <label>Background</label>
+          <input type="text" id="cloudConvertBackground" value="white" placeholder="white">
+        </div>
+      </div>
+    </div>
+
+    <!-- Export Button -->
+    <div class="container">
+      <button class="btn-success" onclick="runExport()" id="exportBtn" style="width: 100%; font-size: 16px; padding: 15px;">
+        💾 Export
+      </button>
+      <div id="exportStatus" style="margin-top: 10px;"></div>
+    </div>
+  </div>
+
+  <script>
+    console.log('=== SIMPLIFIED PNG EXPORT LOADED ===');
+    
+    var configSheetUrl = '';
+    var isConfigLinked = false;
+    var isSetupProcessing = false;
+    var sharedConversionSettings = {
+      gcsInputBucket: '',
+      gcsOutputBucket: '',
+      cloudConvertApiKey: ''
+    };
+
+    function getSharedSettingsFromForm() {
+      return {
+        gcsInputBucket: document.getElementById('gcsInputBucket').value.trim(),
+        gcsOutputBucket: document.getElementById('gcsOutputBucket').value.trim(),
+        cloudConvertApiKey: document.getElementById('cloudConvertApiKey').value.trim()
+      };
+    }
+
+    function applySharedSettingsToForm(settings) {
+      sharedConversionSettings = {
+        gcsInputBucket: settings && settings.gcsInputBucket ? settings.gcsInputBucket : '',
+        gcsOutputBucket: settings && settings.gcsOutputBucket ? settings.gcsOutputBucket : '',
+        cloudConvertApiKey: settings && settings.cloudConvertApiKey ? settings.cloudConvertApiKey : ''
+      };
+
+      document.getElementById('gcsInputBucket').value = sharedConversionSettings.gcsInputBucket;
+      document.getElementById('gcsOutputBucket').value = sharedConversionSettings.gcsOutputBucket;
+      document.getElementById('cloudConvertApiKey').value = sharedConversionSettings.cloudConvertApiKey;
+    }
+
+    function loadSharedConversionSettings() {
+      google.script.run
+        .withSuccessHandler(function(result) {
+          if (result && result.success) {
+            applySharedSettingsToForm(result.settings || {});
+          }
+        })
+        .withFailureHandler(function(error) {
+          console.error('Shared settings load error:', error);
+        })
+        .getSharedConversionSettings();
+    }
+
+    function saveSharedConversionSettings(callback) {
+      var settings = getSharedSettingsFromForm();
+
+      google.script.run
+        .withSuccessHandler(function(result) {
+          if (!result || !result.success) {
+            var message = result && result.message ? result.message : 'Failed to save shared conversion settings';
+            callback(new Error(message));
+            return;
+          }
+
+          applySharedSettingsToForm(result.settings || settings);
+          callback(null, result.settings || settings);
+        })
+        .withFailureHandler(function(error) {
+          callback(new Error(error && error.message ? error.message : error));
+        })
+        .saveSharedConversionSettings(settings);
+    }
+
+    function setSetupProcessingState(isProcessing) {
+      isSetupProcessing = isProcessing;
+
+      var setupSection = document.getElementById('setupSection');
+      var createBtn = document.getElementById('createConfigBtn');
+      var proceedBtn = document.getElementById('proceedBtn');
+      var configInput = document.getElementById('configSheetId');
+      var setupLockOverlay = document.getElementById('setupLockOverlay');
+
+      setupSection.classList.toggle('processing', isProcessing);
+      createBtn.disabled = isProcessing;
+      proceedBtn.disabled = isProcessing;
+      configInput.disabled = isProcessing;
+
+      if (setupLockOverlay) {
+        setupLockOverlay.classList.toggle('active', isProcessing);
+      }
+    }
+    
+    // ============================================
+    // CONFIG SETUP FUNCTIONS
+    // ============================================
+    
+    function createConfigSheet() {
+      if (isSetupProcessing) {
+        return;
+      }
+
+      console.log('createConfigSheet called');
+      setSetupProcessingState(true);
+      
+      google.script.run
+        .withSuccessHandler(function(result) {
+          console.log('Create result:', result);
+          setSetupProcessingState(false);
+          if (result.success) {
+            document.getElementById('configSheetId').value = result.sheetId;
+            configSheetUrl = result.sheetUrl;
+            checkConfigStatus();
+            loadSharedConversionSettings();
+            window.open(result.sheetUrl, '_blank');
+          } else {
+            showStatus('❌ ' + result.message, 'error');
+          }
+        })
+        .withFailureHandler(function(error) {
+          console.error('Create error:', error);
+          setSetupProcessingState(false);
+          showStatus('❌ Error: ' + error, 'error');
+        })
+        .createConfigSheet();
+    }
+    
+    function checkConfigStatus() {
+      console.log('checkConfigStatus called');
+      
+      google.script.run
+        .withSuccessHandler(function(result) {
+          console.log('Status result:', result);
+          
+          var statusDiv = document.getElementById('configSheetStatus');
+          var statusText = document.getElementById('statusText');
+          var statusDetails = document.getElementById('statusDetails');
+          var proceedBtn = document.getElementById('proceedBtn');
+          var configInput = document.getElementById('configSheetId'); // Get the input field
+          
+          // Auto-fill the input box if an ID was remembered
+          if (result.sheetId) {
+            configInput.value = result.sheetId;
+          }
+          
+          if (result.linked) {
+            statusDiv.style.background = '#d4edda';
+            statusDiv.style.borderLeftColor = '#28a745';
+            statusText.innerHTML = '✅ Linked';
+            statusDetails.innerHTML = '<strong>Sheet:</strong> ' + result.sheetName + '<br>' +
+                                      '<strong>Configs:</strong> ' + result.configCount + ' saved<br>' +
+                                      '<a href="' + result.sheetUrl + '" target="_blank">Open Config Sheet →</a>';
+            isConfigLinked = true;
+            configSheetUrl = result.sheetUrl;
+            
+            // Update export view info
+            document.getElementById('linkedSheetName').textContent = result.sheetName;
+            document.getElementById('openConfigLink').href = result.sheetUrl;
+          } else {
+            statusDiv.style.background = '#fff3cd';
+            statusDiv.style.borderLeftColor = '#ff9800';
+            statusText.innerHTML = '❌ Not Linked';
+            statusDetails.textContent = result.message;
+            isConfigLinked = false;
+          }
+        })
+        .withFailureHandler(function(error) {
+          console.error('Status error:', error);
+        })
+        .checkConfigSheet();
+    }
+    
+    function proceedToExport() {
+      if (isSetupProcessing) return;
+
+      var sheetId = document.getElementById('configSheetId').value.trim();
+      if (!sheetId) {
+        showStatus('❌ Please enter a config sheet link or ID first', 'error');
+        return;
+      }
+
+      setSetupProcessingState(true);
+
+      google.script.run
+        .withSuccessHandler(function(result) {
+          setSetupProcessingState(false);
+          if (result.success) {
+            configSheetUrl = result.sheetUrl;
+            checkConfigStatus();
+            document.getElementById('configSetupView').classList.add('hidden');
+            document.getElementById('exportView').classList.remove('hidden');
+            loadSharedConversionSettings();
+            loadSheetTabs();
+          } else {
+            showStatus('❌ ' + result.message, 'error');
+          }
+        })
+        .withFailureHandler(function(error) {
+          console.error('Link error:', error);
+          setSetupProcessingState(false);
+          showStatus('❌ Error: ' + error, 'error');
+        })
+        .setConfigSheetId(sheetId);
+    }
+    
+    function backToConfigSetup() {
+      document.getElementById('exportView').classList.add('hidden');
+      document.getElementById('configSetupView').classList.remove('hidden');
+      checkConfigStatus();
+    }
+    
+    // ============================================
+    // EXPORT UI FUNCTIONS
+    // ============================================
+
+    function loadSheetTabs() {
+      if (isRefreshing) return;
+      isRefreshing = true;
+
+      var btn = document.querySelector('button[onclick="loadSheetTabs()"]');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '⏳';
+      }
+
+      google.script.run
+        .withSuccessHandler(function(tabs) {
+          var select = document.getElementById('sheetTab');
+          var previousTab = select.value;
+          select.innerHTML = '';
+          tabs.forEach(function(tab) {
+            var option = document.createElement('option');
+            option.value = tab;
+            option.textContent = tab;
+            select.appendChild(option);
+          });
+          if (previousTab && tabs.indexOf(previousTab) > -1) {
+            select.value = previousTab;
+          }
+          loadNamedRanges();
+          finalizeRefresh();
+        })
+        .withFailureHandler(function(error) {
+          console.error('Error loading tabs: ' + error);
+          finalizeRefresh();
+        })
+        .getSheetTabs();
+
+      document.getElementById('sheetTab').onchange = function() {
+        lockRangeUI();
+        loadNamedRanges();
+      };
+    }
+
+    function lockRangeUI() {
+      var select = document.getElementById('namedRangeSelect');
+      select.innerHTML = '<option value="">⏳ Loading ranges...</option>';
+      select.disabled = true;
+
+      if (!isCustomRangeMode) {
+        document.getElementById('cellRange').value = '';
+      }
+    }
+
+    function loadNamedRanges() {
+      var sheetName = document.getElementById('sheetTab').value;
+      if (!sheetName) return;
+
+      google.script.run
+        .withSuccessHandler(function(ranges) {
+          var select = document.getElementById('namedRangeSelect');
+          select.disabled = false;
+          select.innerHTML = '<option value="">🔗 Select a named range</option>';
+          ranges.forEach(function(range) {
+            var option = document.createElement('option');
+            option.value = range.name;
+            option.textContent = range.name + ' (' + range.a1Notation + ')';
+            select.appendChild(option);
+          });
+        })
+        .withFailureHandler(function(error) {
+          console.error('Error loading named ranges: ' + error);
+          var select = document.getElementById('namedRangeSelect');
+          select.disabled = false;
+          select.innerHTML = '<option value="">🔗 Select a named range</option>';
+        })
+        .getSheetNamedRanges(sheetName);
+    }
+
+    document.getElementById('namedRangeSelect').onchange = function() {
+      var val = this.value;
+      if (val) {
+        document.getElementById('cellRange').value = val;
+      }
+    };
+
+    var isRefreshing = false;
+
+    function finalizeRefresh() {
+      isRefreshing = false;
+      var btn = document.querySelector('button[onclick="loadSheetTabs()"]');
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '🔄';
+      }
+    }
+
+    var isCustomRangeMode = false;
+
+    function toggleRangeMode() {
+      isCustomRangeMode = !isCustomRangeMode;
+      document.getElementById('namedRangeSelect').style.display = isCustomRangeMode ? 'none' : '';
+      document.getElementById('cellRange').style.display = isCustomRangeMode ? '' : 'none';
+      document.getElementById('rangeToggleBtn').textContent = isCustomRangeMode ? '📋' : '✏️';
+      document.getElementById('rangeToggleBtn').title = isCustomRangeMode ? 'Switch to named range selection' : 'Switch to custom range entry';
+      document.getElementById('rangeInfo').textContent = isCustomRangeMode
+        ? 'Type a custom range (e.g., A1:Z100), or click "Named ranges" to go back.'
+        : 'Select a named range, or click "Custom range" to enter a manual range.';
+      document.getElementById('captureBtnContainer').style.display = isCustomRangeMode ? '' : 'none';
+    }
+
+    function captureSelection() {
+      var btn = document.getElementById('captureBtn');
+      btn.disabled = true;
+      btn.className = 'btn-warning';
+      btn.textContent = '⏳ Loading...';
+
+      google.script.run
+        .withSuccessHandler(function(result) {
+          btn.disabled = false;
+          btn.className = 'btn-primary';
+          btn.textContent = '📍 Capture Selection';
+
+          var sheetSelect = document.getElementById('sheetTab');
+          sheetSelect.value = result.sheetName;
+          if (sheetSelect.onchange) sheetSelect.onchange();
+
+          document.getElementById('cellRange').value = result.rangeA1;
+        })
+        .withFailureHandler(function(error) {
+          btn.disabled = false;
+          btn.className = 'btn-primary';
+          btn.textContent = '📍 Capture Selection';
+          alert('Error capturing selection: ' + error);
+        })
+        .getActiveCellRange();
+    }
+
+    var filterRowCounter = 0;
+
+    function toggleFilter() {
+      var enabled = document.getElementById('filterEnabled').checked;
+      document.getElementById('filterSettings').classList.toggle('hidden', !enabled);
+    }
+
+    function addFilterRow(cellRef, savedValues) {
+      filterRowCounter++;
+      var container = document.getElementById('filterRowsContainer');
+      var rowId = 'filter-row-' + filterRowCounter;
+
+      var row = document.createElement('div');
+      row.className = 'filter-row';
+      row.id = rowId;
+      row.style.cssText = 'border:1px solid #ddd; border-radius:4px; padding:8px; margin-bottom:8px; background:#fafafa;';
+
+      var header = document.createElement('div');
+      header.style.cssText = 'display:flex; gap:5px; align-items:center; margin-bottom:5px;';
+
+      var cellInput = document.createElement('input');
+      cellInput.type = 'text';
+      cellInput.className = 'filter-cell-input';
+      cellInput.placeholder = 'e.g., B2';
+      cellInput.style.cssText = 'flex:1;';
+      if (cellRef) cellInput.value = cellRef;
+
+      var loadBtn = document.createElement('button');
+      loadBtn.className = 'load-filter-btn';
+      loadBtn.textContent = 'Load';
+      loadBtn.style.cssText = 'white-space:nowrap; padding:4px 10px;';
+      loadBtn.onclick = function() { loadFilterRow(loadBtn); };
+
+      var removeBtn = document.createElement('button');
+      removeBtn.className = 'remove-filter-btn';
+      removeBtn.textContent = '✕';
+      removeBtn.style.cssText = 'white-space:nowrap; padding:4px 8px; color:#a00;';
+      removeBtn.onclick = function() { removeFilterRow(removeBtn); };
+
+      header.appendChild(cellInput);
+      header.appendChild(loadBtn);
+      header.appendChild(removeBtn);
+
+      var valuesSection = document.createElement('div');
+      valuesSection.className = 'filter-values-section';
+      valuesSection.style.cssText = 'display:none;';
+
+      var checkboxList = document.createElement('div');
+      checkboxList.className = 'filter-checkbox-list';
+      checkboxList.style.cssText = 'max-height:150px; overflow-y:auto; border:1px solid #ccc; padding:6px; border-radius:4px; background:#fff; margin-bottom:3px;';
+
+      var selectionInfo = document.createElement('p');
+      selectionInfo.className = 'filter-selection-info info';
+      selectionInfo.style.cssText = 'margin:0;';
+      selectionInfo.textContent = 'No values selected';
+
+      valuesSection.appendChild(checkboxList);
+      valuesSection.appendChild(selectionInfo);
+
+      var hiddenValues = document.createElement('input');
+      hiddenValues.type = 'hidden';
+      hiddenValues.className = 'filter-values-hidden';
+      if (savedValues) hiddenValues.value = savedValues;
+
+      row.appendChild(header);
+      row.appendChild(valuesSection);
+      row.appendChild(hiddenValues);
+      container.appendChild(row);
+
+      if (savedValues) {
+        // If re-populating from a saved config, show the values as a summary
+        selectionInfo.textContent = 'Values: ' + savedValues;
+      }
+    }
+
+    function removeFilterRow(btn) {
+      var row = btn.closest('.filter-row');
+      if (row) row.remove();
+    }
+
+    function loadFilterRow(btn) {
+      var row = btn.closest('.filter-row');
+      var cellInput = row.querySelector('.filter-cell-input');
+      var cellRef = cellInput.value.trim();
+
+      if (!cellRef) {
+        alert('Please enter a cell reference first');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Loading...';
+
+      google.script.run
+        .withSuccessHandler(function(result) {
+          btn.disabled = false;
+          btn.textContent = 'Load';
+
+          if (!result.success) {
+            alert(result.error);
+            return;
+          }
+
+          populateFilterRowCheckboxes(row, result.values);
+        })
+        .withFailureHandler(function(error) {
+          btn.disabled = false;
+          btn.textContent = 'Load';
+          alert('Error loading dropdown: ' + error);
+        })
+        .getFilterDropdownOptions(cellRef);
+    }
+
+    function populateFilterRowCheckboxes(row, values) {
+      var checkboxList = row.querySelector('.filter-checkbox-list');
+      var valuesSection = row.querySelector('.filter-values-section');
+      var hiddenValues = row.querySelector('.filter-values-hidden');
+
+      checkboxList.innerHTML = '';
+      values.forEach(function(val) {
+        var label = document.createElement('label');
+        label.style.display = 'block';
+        label.style.margin = '2px 0';
+        label.style.fontWeight = 'normal';
+
+        var cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.value = val;
+        cb.onchange = function() { updateFilterRowSelection(row); };
+
+        label.appendChild(cb);
+        label.appendChild(document.createTextNode(' ' + val));
+        checkboxList.appendChild(label);
+      });
+
+      // Restore previously saved selections
+      var saved = hiddenValues.value;
+      if (saved) {
+        var savedVals = saved.split(', ').filter(Boolean);
+        var cbs = checkboxList.querySelectorAll('input[type="checkbox"]');
+        cbs.forEach(function(cb) {
+          if (savedVals.indexOf(cb.value) > -1) cb.checked = true;
+        });
+      }
+
+      valuesSection.style.display = '';
+      updateFilterRowSelection(row);
+    }
+
+    function updateFilterRowSelection(row) {
+      var checkboxes = row.querySelectorAll('.filter-checkbox-list input[type="checkbox"]:checked');
+      var selected = Array.from(checkboxes).map(function(cb) { return cb.value; });
+      row.querySelector('.filter-values-hidden').value = selected.join(', ');
+      row.querySelector('.filter-selection-info').textContent =
+        selected.length > 0 ? 'Selected: ' + selected.join(', ') : 'No values selected';
+    }
+
+    function toggleAdvanced() {
+      var content = document.getElementById('advancedSettings');
+      var toggle = document.getElementById('advancedToggle');
+      var isHidden = content.classList.contains('hidden');
+      
+      content.classList.toggle('hidden');
+      toggle.textContent = isHidden ? '▲' : '▼';
+    }
+    
+    function togglePngMethod() {
+      var method = document.getElementById('pngConversionMethod').value;
+      document.getElementById('internalApiSettings').classList.toggle('hidden', method !== 'internal');
+      document.getElementById('cloudConvertSettings').classList.toggle('hidden', method !== 'cloudconvert');
+    }
+    
+    function toggleAutoCrop() {
+      var enabled = document.getElementById('pngAutoCrop').checked;
+      document.getElementById('cropSettings').classList.toggle('hidden', enabled);
+    }
+    
+    function getSettings() {
+      var method = document.getElementById('pngConversionMethod').value;
+      
+      var pngSettings;
+      if (method === 'cloudconvert') {
+        pngSettings = {
+          dpi: parseInt(document.getElementById('cloudConvertDpi').value) || 300,
+          background: document.getElementById('cloudConvertBackground').value.trim() || 'white',
+          alpha: document.getElementById('cloudConvertBackground').value.trim() === 'transparent'
+        };
+      } else {
+        // Internal API (IAM authentication handled automatically)
+        pngSettings = {
+          dpi: parseInt(document.getElementById('pngDpi').value) || 300,
+          quality: parseInt(document.getElementById('pngQuality').value) || 90,
+          background: document.getElementById('pngBackground').value.trim() || 'white',
+          autoCrop: document.getElementById('pngAutoCrop').checked,
+          cropLeft: parseInt(document.getElementById('cropLeft').value) || 0,
+          cropTop: parseInt(document.getElementById('cropTop').value) || 0,
+          cropRight: parseInt(document.getElementById('cropRight').value) || 0,
+          cropBottom: parseInt(document.getElementById('cropBottom').value) || 0
+        };
+      }
+      
+      // Collect dynamic filter rows
+      var filterRows = document.querySelectorAll('#filterRowsContainer .filter-row');
+      var filterCells = [];
+      filterRows.forEach(function(row) {
+        var cell = row.querySelector('.filter-cell-input').value.trim();
+        var valuesStr = row.querySelector('.filter-values-hidden').value;
+        var valuesArr = valuesStr ? valuesStr.split(', ').filter(Boolean) : [];
+        if (cell && valuesArr.length > 0) {
+          filterCells.push({ cell: cell, values: valuesArr });
+        }
+      });
+
+      return {
+        sheetTabs: document.getElementById('sheetTab').value,
+        cellRanges: document.getElementById('cellRange').value.trim(),
+        customNames: document.getElementById('customNames').value.trim(),
+        filterEnabled: document.getElementById('filterEnabled').checked,
+        filterCells: filterCells,
+        filter1Cell: filterCells[0] ? filterCells[0].cell : '',
+        filter1Values: filterCells[0] ? filterCells[0].values.join(', ') : '',
+        filter2Cell: filterCells[1] ? filterCells[1].cell : '',
+        filter2Values: filterCells[1] ? filterCells[1].values.join(', ') : '',
+        pngConversionMethod: method,
+        pngSettings: pngSettings
+      };
+    }
+    
+    function runExport() {
+      var settings = getSettings();
+      
+    if (!settings.sheetTabs || !settings.cellRanges) {
+      alert('Please select a sheet tab and enter a cell range');
+      return;
+    }
+
+      
+      var sharedSettings = getSharedSettingsFromForm();
+
+      if (settings.pngConversionMethod === 'cloudconvert' && !sharedSettings.cloudConvertApiKey) {
+        alert('Please enter your CloudConvert API key in Advanced Settings');
+        return;
+      }
+
+      if (settings.pngConversionMethod === 'internal' && (!sharedSettings.gcsInputBucket || !sharedSettings.gcsOutputBucket)) {
+        alert('Please enter both input and output bucket names in Advanced Settings');
+        return;
+      }
+      
+      var exportBtn = document.getElementById('exportBtn');
+      var exportStatus = document.getElementById('exportStatus');
+      
+      exportBtn.disabled = true;
+      exportBtn.textContent = '🔄 Exporting...';
+      exportStatus.innerHTML = '<div style="padding: 10px; background: #d1ecf1; border-radius: 4px;">Processing... This may take a while.</div>';
+
+      saveSharedConversionSettings(function(error) {
+        if (error) {
+          exportBtn.disabled = false;
+          exportBtn.textContent = '💾 Export';
+          exportStatus.innerHTML = '<div style="padding: 10px; background: #f8d7da; color: #721c24; border-radius: 4px;">Error: ' + error.message + '</div>';
+          return;
+        }
+
+        google.script.run
+          .withSuccessHandler(function(message) {
+            exportBtn.disabled = false;
+            exportBtn.textContent = '💾 Export';
+            
+            if (message.indexOf('✅') > -1) {
+              exportStatus.innerHTML = '<div style="padding: 10px; background: #d4edda; color: #155724; border-radius: 4px; white-space: pre-wrap;">' + message + '</div>';
+            } else {
+              exportStatus.innerHTML = '<div style="padding: 10px; background: #f8d7da; color: #721c24; border-radius: 4px; white-space: pre-wrap;">' + message + '</div>';
+            }
+          })
+          .withFailureHandler(function(serverError) {
+            exportBtn.disabled = false;
+            exportBtn.textContent = '💾 Export';
+            exportStatus.innerHTML = '<div style="padding: 10px; background: #f8d7da; color: #721c24; border-radius: 4px;">Error: ' + serverError + '</div>';
+          })
+          .runExportWithSettings(settings);
+      });
+    }
+    
+    function showStatus(message, type) {
+      var statusDiv = document.getElementById('status');
+      if (!statusDiv) {
+        return;
+      }
+      statusDiv.classList.remove('hidden');
+      statusDiv.textContent = message;
+      statusDiv.className = 'status ' + type;
+    }
+
+    
+    
+    // ============================================
+    // INITIALIZATION
+    // ============================================
+    
+    // Auto-check config status on load
+    checkConfigStatus();
+    togglePngMethod();
+    
+    console.log('=== INITIALIZATION COMPLETE ===');
+  </script>
+</body>
+</html>
+</body>
+</html>

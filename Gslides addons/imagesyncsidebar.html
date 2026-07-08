@@ -1,0 +1,1637 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <style>
+    body {
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      padding: 0;
+      margin: 0;
+      background: #f5f5f5;
+      min-height: 100vh;
+    }
+    .hidden { display: none !important; }
+    
+    /* Config Setup View */
+    #configSetupView {
+      padding: 20px;
+    }
+    .setup-section {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      position: relative;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .setup-section.processing {
+      opacity: 0.7;
+    }
+    .setup-section.processing .btn-primary,
+    .setup-section.processing .btn-success {
+      background: #9aa0a6 !important;
+      color: #ffffff !important;
+    }
+    .setup-section.processing input {
+      background: #eeeeee;
+    }
+    .processing-overlay {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: rgba(245, 245, 245, 0.5);
+      z-index: 10;
+      border-radius: 8px;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 12px;
+      box-sizing: border-box;
+      color: #444;
+      font-weight: 600;
+    }
+    .setup-section.processing .processing-overlay {
+      display: flex;
+    }
+    
+    /* Sync View */
+    #syncView {
+      padding: 15px;
+      min-height: 100vh;
+      height: auto;
+      overflow-y: auto;
+    }
+    .container {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+    
+    /* Image Item */
+    .image-item {
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin-bottom: 10px;
+      background: #fafafa;
+    }
+    .image-item.linked {
+      border-left: 4px solid #34a853;
+      background: #e8f5e9;
+    }
+    .image-item.not-linked {
+      border-left: 4px solid #ea4335;
+      background: #ffebee;
+    }
+    
+    /* Buttons */
+    button {
+      padding: 8px 15px;
+      margin: 5px 2px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .btn-primary { background: #4285f4; color: white; }
+    .btn-success { background: #34a853; color: white; }
+    .btn-warning { background: #fbbc04; color: white; }
+    .btn-danger { background: #ea4335; color: white; }
+    .btn-small { padding: 5px 10px; font-size: 12px; }
+    
+    /* Inputs */
+    input[type="text"], select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+      font-size: 13px;
+    }
+    
+    select.inline {
+      width: auto;
+      min-width: 150px;
+      display: inline-block;
+      font-size: 12px;
+      padding: 6px;
+    }
+    
+    label {
+      display: block;
+      margin: 10px 0 5px 0;
+      font-weight: 600;
+      font-size: 13px;
+    }
+    
+    .info {
+      font-size: 12px;
+      color: #666;
+      margin: 5px 0;
+    }
+    
+    #status {
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 4px;
+      display: none;
+    }
+    .status.success { background: #d4edda; color: #155724; display: block; }
+    .status.error { background: #f8d7da; color: #721c24; display: block; }
+    .status.info { background: #d1ecf1; color: #0c5460; display: block; }
+    
+    h2 { margin-top: 0; color: #333; font-size: 18px; }
+    h3 { margin-top: 0; color: #555; font-size: 15px; }
+    
+    .divider {
+      border-top: 1px solid #ddd;
+      margin: 15px 0;
+    }
+    
+    .slide-number {
+      display: inline-block;
+      background: #4285f4;
+      color: white;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 14px;  /* ← Bigger! */
+      font-weight: bold;
+      margin-right: 8px;
+    }
+
+    .sync-lock-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: rgba(0, 0, 0, 0.28);
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    .sync-lock-overlay.active {
+      display: flex;
+    }
+
+    .sync-lock-card {
+      width: 100%;
+      max-width: 320px;
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
+      padding: 16px;
+      text-align: center;
+      border: 2px solid #d7e8ff;
+    }
+
+    .sync-lock-emoji {
+      font-size: 24px;
+      margin-bottom: 6px;
+      animation: syncPulse 1.1s ease-in-out infinite;
+    }
+
+    .sync-lock-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #1f3b64;
+      margin-bottom: 4px;
+    }
+
+    .sync-lock-message {
+      font-size: 12px;
+      color: #50627a;
+      line-height: 1.4;
+    }
+
+    @keyframes syncPulse {
+      0% { transform: scale(1); opacity: 0.85; }
+      50% { transform: scale(1.08); opacity: 1; }
+      100% { transform: scale(1); opacity: 0.85; }
+    }
+
+    .setup-lock-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: rgba(19, 28, 40, 0.34);
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    .setup-lock-overlay.active {
+      display: flex;
+    }
+
+    .setup-lock-card {
+      width: 100%;
+      max-width: 330px;
+      background: #ffffff;
+      border-radius: 12px;
+      border: 2px solid #d7e8ff;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
+      padding: 16px;
+      text-align: center;
+    }
+
+    .setup-lock-emoji {
+      font-size: 24px;
+      margin-bottom: 6px;
+      animation: setupPulse 1.1s ease-in-out infinite;
+    }
+
+    .setup-lock-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #1f3b64;
+      margin-bottom: 4px;
+    }
+
+    .setup-lock-message {
+      font-size: 12px;
+      color: #50627a;
+      line-height: 1.4;
+    }
+
+    @keyframes setupPulse {
+      0% { transform: scale(1); opacity: 0.85; }
+      50% { transform: scale(1.08); opacity: 1; }
+      100% { transform: scale(1); opacity: 0.85; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- VIEW 1: CONFIG SETUP -->
+  <div id="configSetupView">
+    <div class="setup-section" id="setupSection">
+      <h2>⚙️ Config Sheet Setup Required</h2>
+      <p style="color: #666;">
+        Before you can sync with Sheets2Slides, you need to link to the centralized config sheet.
+      </p>
+      
+      <div id="configSheetStatus" style="padding: 15px; background: #fff3cd; border-left: 4px solid #ff9800; border-radius: 4px; margin: 15px 0;">
+        <strong>Status:</strong> <span id="statusText">Checking...</span><br>
+        <span id="statusDetails" style="font-size: 12px; color: #666; margin-top: 5px; display: block;"></span>
+      </div>
+      
+      <div style="margin-bottom: 20px;">
+        <label>Config Sheet Link or ID:</label>
+        <input type="text" id="configSheetId" placeholder="Paste full Google Sheet link or spreadsheet ID">
+        <p class="info" style="margin-top: 5px; font-size: 11px; color: #666; line-height: 1.6;">
+      💡 <strong>Tip:</strong><br>
+      Paste the full sheet URL, or copy only the ID from this part of the URL:<br>
+      <code style="background: #f0f0f0; padding: 4px 8px; border-radius: 3px; font-size: 10px; word-break: break-all; display: block; margin-top: 4px;">
+        https://docs.google.com/.../d/<span style="background: #fff3cd; padding: 2px 4px; font-weight: bold;">SHEET_ID</span>/edit
+      </code>
+</p>
+
+      </div>
+
+      <div class="divider"></div>
+      
+      <button class="btn-success" onclick="proceedToSync()" id="proceedBtn" style="width: 100%; font-size: 16px;">
+        🖼️ Proceed to Image Sync →
+      </button>
+      
+      <div id="status"></div>
+      <div class="processing-overlay" id="setupProcessingOverlay"></div>
+    </div>
+  </div>
+
+  <div id="setupLockOverlay" class="setup-lock-overlay" aria-live="polite" aria-busy="true">
+    <div class="setup-lock-card">
+      <div class="setup-lock-emoji">⏳✨</div>
+      <div class="setup-lock-title">Config Setup In Progress</div>
+      <div class="setup-lock-message">Please wait while we link your config sheet...</div>
+    </div>
+  </div>
+
+  <!-- VIEW 2: IMAGE SYNC -->
+  <div id="syncView" class="hidden">
+    <div class="container">
+      <div style="display: flex; justify-content: center; align-items: center;">
+        <h2 style="margin: 0; white-space: nowrap;">🪄 Sheets2Slides Sync</h2>
+      </div>
+      
+      <div style="padding: 8px; background: #e8f5e9; border-radius: 4px; margin-top: 10px; font-size: 12px;">
+        ✅ <strong id="linkedSheetName">-</strong> | 
+        <a href="#" id="openConfigLink" target="_blank">Open</a>
+      </div>
+
+      <div style="display: flex; gap: 8px; justify-content: center; margin-top: 10px;">
+        <button id="refreshBtn" onclick="triggerRefresh()" class="btn-small btn-primary" style="margin: 0; padding: 6px 10px;">
+          🔄 Refresh
+        </button>
+        <button onclick="backToConfigSetup()" class="btn-small" style="background: #666; color: white; margin: 0; padding: 6px 10px;">
+          ⚙️ Config
+        </button>
+      </div>
+    </div>
+
+    <div class="container">
+      <h3>⚙️ Conversion Settings</h3>
+      <p class="info">These settings are shared with the Sheets addon through the linked config sheet.</p>
+
+      <label>Input Bucket</label>
+      <input type="text" id="gcsInputBucket" placeholder="your-input-bucket">
+      <p class="info">Internal mode uploads PDFs here.</p>
+
+      <label>Output Bucket</label>
+      <input type="text" id="gcsOutputBucket" placeholder="your-output-bucket">
+      <p class="info">Internal mode downloads converted PNGs from here.</p>
+
+      <label>CloudConvert API Key</label>
+      <input type="password" id="cloudConvertApiKey" placeholder="Your CloudConvert API key">
+      <p class="info">Only required when a config uses the CloudConvert conversion method.</p>
+
+      <button id="saveSharedSettingsBtn" class="btn-small btn-primary" onclick="saveSharedSettingsFromSyncView()" style="width: 100%; margin-top: 8px;">
+        💾 Save Conversion Settings
+      </button>
+      <div id="sharedSettingsStatus" style="margin-top: 10px;"></div>
+    </div>
+
+    <div class="container">
+      <h3>🔃 Sync Selected Slides</h3>
+      <p class="info" style="text-align: center; margin: 5px 0; font-size: 12px;">
+        Select slide checkboxes below, then sync only those linked images.
+      </p>
+      <button id="syncSelectedBtn" class="btn-primary" onclick="handleSyncSelectedSlides()" style="width: 100%; margin-bottom: 5px;">
+        🔃 Sync Selected Slides
+      </button>
+      <div id="bulkSyncStatus" style="margin-top: 10px;"></div>
+    </div>
+
+    <div class="container">
+      <h3>🖼️ Slide Images</h3>
+      <p class="info">All images in this presentation are listed below. Link each image to a config.</p>
+      <div id="imagesList"></div>
+    </div>
+
+    <div class="container">
+      <h3>Sync Actions</h3>
+      <p class="info" style="text-align: center; margin: 5px 0;">
+      </p>
+      
+      <div id="syncStatus" style="margin-top: 10px;"></div>
+    </div>
+  </div>
+
+  <div id="syncLockOverlay" class="sync-lock-overlay" aria-live="polite" aria-busy="true">
+    <div class="sync-lock-card">
+      <div class="sync-lock-emoji">⏳✨</div>
+      <div class="sync-lock-title">Sync In Progress</div>
+      <div class="sync-lock-message" id="syncLockMessage">Please wait while your image sync is running...</div>
+    </div>
+  </div>
+
+  <script>
+    console.log('=== IMAGE SYNC LOADED ===');
+    
+    var configSheetUrl = '';
+    var isConfigLinked = false;
+    var allConfigs = [];
+    var imageLinks = {};
+    var isSetupProcessing = false;
+    var autoOpenSyncOnLoad = true;
+    var activeSyncLocks = 0;
+    var loadImagesRequestToken = 0;
+    var loadConfigsRequestToken = 0;
+    var linkRefreshTimer = null;
+    var refreshInProgress = false;
+    var sharedConversionSettings = {
+      gcsInputBucket: '',
+      gcsOutputBucket: '',
+      cloudConvertApiKey: ''
+    };
+
+    function getSharedSettingsFromForm() {
+      return {
+        gcsInputBucket: document.getElementById('gcsInputBucket').value.trim(),
+        gcsOutputBucket: document.getElementById('gcsOutputBucket').value.trim(),
+        cloudConvertApiKey: document.getElementById('cloudConvertApiKey').value.trim()
+      };
+    }
+
+    function applySharedSettingsToForm(settings) {
+      sharedConversionSettings = {
+        gcsInputBucket: settings && settings.gcsInputBucket ? settings.gcsInputBucket : '',
+        gcsOutputBucket: settings && settings.gcsOutputBucket ? settings.gcsOutputBucket : '',
+        cloudConvertApiKey: settings && settings.cloudConvertApiKey ? settings.cloudConvertApiKey : ''
+      };
+
+      document.getElementById('gcsInputBucket').value = sharedConversionSettings.gcsInputBucket;
+      document.getElementById('gcsOutputBucket').value = sharedConversionSettings.gcsOutputBucket;
+      document.getElementById('cloudConvertApiKey').value = sharedConversionSettings.cloudConvertApiKey;
+    }
+
+    function showSharedSettingsStatus(message, type) {
+      var statusDiv = document.getElementById('sharedSettingsStatus');
+      statusDiv.innerHTML = '<div class="status ' + type + '">' + message + '</div>';
+    }
+
+    function loadSharedConversionSettings() {
+      google.script.run
+        .withSuccessHandler(function(result) {
+          if (result && result.success) {
+            applySharedSettingsToForm(result.settings || {});
+          }
+        })
+        .withFailureHandler(function(error) {
+          console.error('Shared settings load error:', error);
+        })
+        .getSharedConversionSettings();
+    }
+
+    function saveSharedConversionSettings(callback) {
+      var settings = getSharedSettingsFromForm();
+
+      google.script.run
+        .withSuccessHandler(function(result) {
+          if (!result || !result.success) {
+            var message = result && result.message ? result.message : 'Failed to save shared conversion settings';
+            callback(new Error(message));
+            return;
+          }
+
+          applySharedSettingsToForm(result.settings || settings);
+          callback(null, result.settings || settings);
+        })
+        .withFailureHandler(function(error) {
+          callback(new Error(error && error.message ? error.message : error));
+        })
+        .saveSharedConversionSettings(settings);
+    }
+
+    function saveSharedSettingsFromSyncView() {
+      var btn = document.getElementById('saveSharedSettingsBtn');
+      btn.disabled = true;
+      btn.textContent = '⏳ Saving...';
+
+      saveSharedConversionSettings(function(error) {
+        btn.disabled = false;
+        btn.textContent = '💾 Save Conversion Settings';
+
+        if (error) {
+          showSharedSettingsStatus('❌ ' + error.message, 'error');
+          return;
+        }
+
+        showSharedSettingsStatus('✅ Conversion settings saved', 'success');
+      });
+    }
+
+    function finalizeRefreshUI() {
+      if (!refreshInProgress) {
+        return;
+      }
+      refreshInProgress = false;
+      var btn = document.getElementById('refreshBtn');
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '🔄 Refresh';
+      }
+      unlockSyncUI();
+    }
+
+    function scheduleLinkRefresh() {
+      if (linkRefreshTimer) {
+        clearTimeout(linkRefreshTimer);
+      }
+      linkRefreshTimer = null;
+    }
+
+    function lockSyncUI(message) {
+      activeSyncLocks++;
+      var overlay = document.getElementById('syncLockOverlay');
+      var messageEl = document.getElementById('syncLockMessage');
+      if (messageEl && message) {
+        messageEl.textContent = message;
+      }
+      if (overlay) {
+        overlay.classList.add('active');
+      }
+    }
+
+    function unlockSyncUI() {
+      activeSyncLocks = Math.max(0, activeSyncLocks - 1);
+      if (activeSyncLocks > 0) {
+        return;
+      }
+      var overlay = document.getElementById('syncLockOverlay');
+      if (overlay) {
+        overlay.classList.remove('active');
+      }
+    }
+
+    function setSetupProcessingState(isProcessing) {
+      isSetupProcessing = isProcessing;
+
+      var setupSection = document.getElementById('setupSection');
+      var proceedBtn = document.getElementById('proceedBtn');
+      var configInput = document.getElementById('configSheetId');
+      var setupLockOverlay = document.getElementById('setupLockOverlay');
+
+      setupSection.classList.toggle('processing', isProcessing);
+      proceedBtn.disabled = isProcessing;
+      configInput.disabled = isProcessing;
+
+      if (setupLockOverlay) {
+        setupLockOverlay.classList.toggle('active', isProcessing);
+      }
+    }
+    
+    // ============================================
+    // CONFIG SETUP FUNCTIONS
+    // ============================================
+
+    function checkConfigStatus() {
+      console.log('checkConfigStatus called');
+      
+      google.script.run
+        .withSuccessHandler(function(result) {
+          console.log('Status result:', result);
+          
+          var statusDiv = document.getElementById('configSheetStatus');
+          var statusText = document.getElementById('statusText');
+          var statusDetails = document.getElementById('statusDetails');
+          if (result.linked) {
+            statusDiv.style.background = '#d4edda';
+            statusDiv.style.borderLeftColor = '#28a745';
+            statusText.innerHTML = '✅ Linked';
+            statusDetails.innerHTML = '<strong>Sheet:</strong> ' + result.sheetName + '<br>' +
+                                     '<strong>Configs:</strong> ' + result.configCount + ' saved<br>' +
+                                     '<a href="' + result.sheetUrl + '" target="_blank">Open</a>';
+            isConfigLinked = true;
+            configSheetUrl = result.sheetUrl;
+            
+            if (document.getElementById('linkedSheetName')) {
+              document.getElementById('linkedSheetName').textContent = result.sheetName;
+            }
+            if (document.getElementById('openConfigLink')) {
+              document.getElementById('openConfigLink').href = result.sheetUrl;
+            }
+
+            loadSharedConversionSettings();
+
+            if (autoOpenSyncOnLoad) {
+              autoOpenSyncOnLoad = false;
+              proceedToSync();
+            }
+          } else {
+            statusDiv.style.background = '#fff3cd';
+            statusDiv.style.borderLeftColor = '#ff9800';
+            statusText.innerHTML = '❌ Not Linked';
+            statusDetails.textContent = result.message;
+            isConfigLinked = false;
+            autoOpenSyncOnLoad = false;
+          }
+        })
+        .withFailureHandler(function(error) {
+          console.error('Status error:', error);
+        })
+        .checkConfigSheet();
+    }
+    
+    function proceedToSync() {
+      if (isSetupProcessing) return;
+
+      var sheetId = document.getElementById('configSheetId').value.trim();
+      if (!sheetId) {
+        showStatus('❌ Please enter a config sheet link or ID first', 'error');
+        return;
+      }
+
+      setSetupProcessingState(true);
+
+      google.script.run
+        .withSuccessHandler(function(result) {
+          setSetupProcessingState(false);
+          if (result.success) {
+            configSheetUrl = result.sheetUrl;
+            checkConfigStatus();
+            document.getElementById('configSetupView').classList.add('hidden');
+            document.getElementById('syncView').classList.remove('hidden');
+            loadSharedConversionSettings();
+            loadConfigs();
+          } else {
+            showStatus('❌ ' + result.message, 'error');
+          }
+        })
+        .withFailureHandler(function(error) {
+          console.error('Link error:', error);
+          setSetupProcessingState(false);
+          showStatus('❌ Error: ' + error, 'error');
+        })
+        .setConfigSheetId(sheetId);
+    }
+    
+    function backToConfigSetup() {
+      document.getElementById('syncView').classList.add('hidden');
+      document.getElementById('configSetupView').classList.remove('hidden');
+      checkConfigStatus();
+    }
+
+    function validateSharedSettingsForConfig(configId) {
+      var config = null;
+      for (var i = 0; i < allConfigs.length; i++) {
+        if (String(allConfigs[i].id) === String(configId)) {
+          config = allConfigs[i];
+          break;
+        }
+      }
+
+      if (!config || !config.settings) {
+        return null;
+      }
+
+      var method = config.settings.pngConversionMethod || 'internal';
+      var sharedSettings = getSharedSettingsFromForm();
+
+      if (method === 'cloudconvert' && !sharedSettings.cloudConvertApiKey) {
+        return 'Please enter your CloudConvert API key in Conversion Settings first.';
+      }
+
+      if (method !== 'cloudconvert' && (!sharedSettings.gcsInputBucket || !sharedSettings.gcsOutputBucket)) {
+        return 'Please enter both input and output bucket names in Conversion Settings first.';
+      }
+
+      return null;
+    }
+
+    function persistSharedSettingsThen(callback) {
+      saveSharedConversionSettings(function(error) {
+        if (error) {
+          showSyncStatus('❌ ' + error.message, 'error');
+          callback(error);
+          return;
+        }
+
+        callback(null);
+      });
+    }
+    
+    // ============================================
+    // SELECTED SLIDES SYNC
+    // ============================================
+    function handleSyncSelectedSlides() {
+      var statusDiv = document.getElementById('bulkSyncStatus');
+      var syncBtn = document.getElementById('syncSelectedBtn');
+
+      var checkedBoxes = document.querySelectorAll('.slide-checkbox:checked');
+      var selectedSlides = Array.from(checkedBoxes).map(function(cb) {
+        return parseInt(cb.getAttribute('data-slide'));
+      });
+
+      if (selectedSlides.length === 0) {
+        statusDiv.innerHTML = '<div class="status error">⚠️ No slides selected.</div>';
+        return;
+      }
+
+      lockSyncUI('🔄 Syncing selected slides...');
+      syncBtn.disabled = true;
+      syncBtn.innerHTML = '⏳ Syncing...';
+      statusDiv.innerHTML = '<div class="status info">🔄 Preparing selected slides sync...</div>';
+
+      function resetSelectedSyncUI() {
+        syncBtn.disabled = false;
+        syncBtn.innerHTML = '🔃 Sync Selected Slides';
+      }
+
+      google.script.run
+        .withSuccessHandler(function(result) {
+          if (!result.success) {
+            statusDiv.innerHTML = '<div class="status error">❌ Could not load images.</div>';
+            resetSelectedSyncUI();
+            unlockSyncUI();
+            return;
+          }
+
+          var imagesToSync = result.images.filter(function(img) {
+            return selectedSlides.indexOf(img.slideNumber) !== -1 && imageLinks[img.objectId];
+          });
+
+          if (imagesToSync.length === 0) {
+            statusDiv.innerHTML = '<div class="status error">⚠️ No linked images found on selected slides.</div>';
+            resetSelectedSyncUI();
+            unlockSyncUI();
+            return;
+          }
+
+          for (var validationIndex = 0; validationIndex < imagesToSync.length; validationIndex++) {
+            var validationConfigId = imageLinks[imagesToSync[validationIndex].objectId];
+            var validationError = validateSharedSettingsForConfig(validationConfigId);
+            if (validationError) {
+              statusDiv.innerHTML = '<div class="status error">❌ ' + validationError + '</div>';
+              resetSelectedSyncUI();
+              unlockSyncUI();
+              return;
+            }
+          }
+
+          persistSharedSettingsThen(function(saveError) {
+            if (saveError) {
+              statusDiv.innerHTML = '<div class="status error">❌ ' + saveError.message + '</div>';
+              resetSelectedSyncUI();
+              unlockSyncUI();
+              return;
+            }
+
+            var total = imagesToSync.length;
+            var completed = 0;
+            var errors = [];
+
+            var sheetGroups = {};
+            imagesToSync.forEach(function(img) {
+              var configId = imageLinks[img.objectId];
+              var config = null;
+              for (var ci = 0; ci < allConfigs.length; ci++) {
+                if (allConfigs[ci].id == configId || allConfigs[ci].id.toString() === String(configId)) {
+                  config = allConfigs[ci];
+                  break;
+                }
+              }
+
+              var sheetKey = config
+                ? (config.spreadsheetId + '|' + (config.sheetTab || config.settings && config.settings.sheetTabs || ''))
+                : ('unknown|' + img.objectId);
+
+              if (!sheetGroups[sheetKey]) {
+                sheetGroups[sheetKey] = [];
+              }
+              sheetGroups[sheetKey].push(img);
+            });
+
+            var groupKeys = Object.keys(sheetGroups);
+            var groupsDone = 0;
+
+            statusDiv.innerHTML = '<div class="status info">☁️ Sync started: 0/' + total + ' complete.</div>';
+
+            function updateProgress() {
+              statusDiv.innerHTML = '<div class="status info">☁️ Sync in progress: ' + completed + '/' + total + ' complete' + (errors.length ? ', ' + errors.length + ' error(s).' : '.') + '</div>';
+            }
+
+            function completeAllGroups() {
+              if (errors.length === 0) {
+                statusDiv.innerHTML = '<div class="status success">✅ Synced ' + total + '/' + total + ' selected image(s).</div>';
+              } else {
+                statusDiv.innerHTML = '<div class="status error">⚠️ Synced ' + (total - errors.length) + '/' + total + ' image(s). ' + errors.length + ' failed.</div>';
+              }
+
+              resetSelectedSyncUI();
+              unlockSyncUI();
+              setTimeout(function() { loadImages(); }, 1200);
+            }
+
+            groupKeys.forEach(function(key) {
+              var groupImages = sheetGroups[key];
+              var groupIndex = 0;
+
+              function runNextInGroup() {
+                if (groupIndex >= groupImages.length) {
+                  groupsDone++;
+                  if (groupsDone === groupKeys.length) {
+                    completeAllGroups();
+                  }
+                  return;
+                }
+
+                var img = groupImages[groupIndex];
+                var objectId = img.objectId;
+                var configId = imageLinks[objectId];
+
+                (function(capturedObjId, capturedConfigId) {
+                  google.script.run
+                    .withSuccessHandler(function(syncResult) {
+                      completed++;
+                      if (syncResult.success && syncResult.newObjectId && syncResult.newObjectId !== capturedObjId) {
+                        delete imageLinks[capturedObjId];
+                        imageLinks[syncResult.newObjectId] = capturedConfigId;
+                      }
+                      if (!syncResult.success) {
+                        errors.push(capturedObjId + ': ' + syncResult.message);
+                      }
+                      updateProgress();
+                      groupIndex++;
+                      runNextInGroup();
+                    })
+                    .withFailureHandler(function(error) {
+                      completed++;
+                      errors.push(capturedObjId + ': ' + String(error));
+                      updateProgress();
+                      groupIndex++;
+                      runNextInGroup();
+                    })
+                    .syncImageFromConfig(capturedObjId, capturedConfigId);
+                })(objectId, configId);
+              }
+
+              runNextInGroup();
+            });
+          });
+        })
+        .withFailureHandler(function(error) {
+          statusDiv.innerHTML = '<div class="status error">❌ Error: ' + (error.message || error) + '</div>';
+          resetSelectedSyncUI();
+          unlockSyncUI();
+        })
+        .getAllImagesFromPresentation();
+    }
+
+    // ============================================
+    // SYNC FUNCTIONS
+    // ============================================
+    
+    function loadConfigsInBackground() {
+      console.log('=== LOADING CONFIGS IN BACKGROUND ===');
+      var requestToken = ++loadConfigsRequestToken;
+      
+      google.script.run
+        .withSuccessHandler(function(configs) {
+          if (requestToken !== loadConfigsRequestToken) {
+            console.log('Ignoring stale config load response');
+            return;
+          }
+
+          console.log('SUCCESS! Received configs:', configs);
+          console.log('Type of configs:', typeof configs);
+          console.log('Is array?', Array.isArray(configs));
+          console.log('Config count:', configs ? configs.length : 0);
+          
+          if (configs && configs.length > 0) {
+            configs.forEach(function(c, i) {
+              console.log('Config ' + i + ':', c);
+            });
+          }
+          
+          allConfigs = configs || [];
+          
+          // Show debug info
+          var debugDiv = document.getElementById('debugInfo');
+          var debugText = document.getElementById('debugText');
+          if (debugDiv && debugText) {
+            debugDiv.style.display = 'block';
+            debugText.textContent = allConfigs.length + ' configs loaded: ' + 
+              allConfigs.map(function(c) { return c.name; }).join(', ');
+          }
+          
+          if (allConfigs.length === 0) {
+            showSyncStatus('⚠️ No configs found. Check the Execution log in Apps Script.', 'error');
+            console.error('NO CONFIGS LOADED!');
+            return;
+          }
+          
+          console.log('Configs stored in allConfigs:', allConfigs);
+          
+          console.log('Config list refreshed in background without repainting images');
+        })
+        .withFailureHandler(function(error) {
+          console.error('FAILED to load configs!');
+          console.error('Error:', error);
+          console.error('Error type:', typeof error);
+          showSyncStatus('❌ Error loading configs: ' + error, 'error');
+        })
+        .getAvailableConfigs();
+    }
+    
+    function loadConfigs() {
+      showSyncStatus('Refreshing configs...', 'info');
+      
+      google.script.run
+        .withSuccessHandler(function(configs) {
+          allConfigs = configs;
+          console.log('Loaded ' + configs.length + ' configs');
+          loadImages();
+        })
+        .withFailureHandler(function(error) {
+          showSyncStatus('Error loading configs: ' + error, 'error');
+          finalizeRefreshUI();
+        })
+        .getAvailableConfigs();
+    }
+    
+    function loadImages() {
+      var requestToken = ++loadImagesRequestToken;
+      showSyncStatus('⏳ Loading slide images...', 'info');
+      
+      google.script.run
+        .withSuccessHandler(function(links) {
+          if (requestToken !== loadImagesRequestToken) {
+            console.log('Ignoring stale link-map response');
+            return;
+          }
+
+          imageLinks = links || {};
+
+          google.script.run
+            .withSuccessHandler(function(result) {
+              if (requestToken !== loadImagesRequestToken) {
+                console.log('Ignoring stale image list response');
+                return;
+              }
+
+              if (result.success) {
+                displayImages(result.images);
+                var configText = allConfigs.length > 0 ? ' | ' + allConfigs.length + ' configs available' : '';
+                showSyncStatus('✅ Loaded ' + result.images.length + ' images from ' + result.slideCount + ' slides' + configText, 'success');
+              } else {
+                showSyncStatus(result.message, 'error');
+              }
+            })
+            .withFailureHandler(function(error) {
+              showSyncStatus('Error: ' + error, 'error');
+              finalizeRefreshUI();
+            })
+            .getAllImagesFromPresentation();
+        })
+        .withFailureHandler(function(error) {
+          showSyncStatus('Error: ' + error, 'error');
+          finalizeRefreshUI();
+        })
+        .getAllImageConfigLinks();
+    }
+    
+    function refreshImages() {
+      loadConfigs(); // This will load configs first, then images
+    }
+    
+    function displayImages(images) {
+      // Release refresh lock once the latest render is complete.
+      finalizeRefreshUI();
+
+      var container = document.getElementById('imagesList');
+      
+      if (!images || images.length === 0) {
+        container.innerHTML = '<p class="info">No images found in presentation</p>';
+        return;
+      }
+      
+      console.log('Displaying images. All configs available:', allConfigs);
+      
+      // Group images by slide number
+      var imagesBySlide = {};
+      images.forEach(function(img) {
+        if (!imagesBySlide[img.slideNumber]) {
+          imagesBySlide[img.slideNumber] = [];
+        }
+        imagesBySlide[img.slideNumber].push(img);
+      });
+      
+      var html = '';
+      
+      // Add Select All / Deselect All controls
+      html += '<div style="background: #f0f0f0; padding: 10px; border-radius: 4px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">';
+      html += '<div>';
+      html += '<input type="checkbox" id="selectAll" onchange="toggleSelectAll()" style="margin-right: 8px;">';
+      html += '<label for="selectAll" style="font-weight: 600; cursor: pointer;">Select All Slides</label>';
+      html += '</div>';
+      html += '<div id="selectionCount" style="font-size: 12px; color: #666;">0 selected</div>';
+      html += '</div>';
+      
+      // Sort slide numbers
+      var slideNumbers = Object.keys(imagesBySlide).map(Number).sort(function(a, b) { return a - b; });
+      
+      slideNumbers.forEach(function(slideNum) {
+        var slideImages = imagesBySlide[slideNum];
+        
+        // Check if any image on this slide is linked
+        var hasLinked = slideImages.some(function(img) {
+          return imageLinks[img.objectId];
+        });
+        
+        var itemClass = hasLinked ? 'linked' : 'not-linked';
+        
+        // Create slide container
+        html += '<div class="image-item ' + itemClass + '" style="margin-bottom: 10px;">';
+        
+        // COLLAPSED VIEW - Slide header with CHECKBOX
+        html += '<div style="display: flex; align-items: center; padding: 12px; background: ' + (hasLinked ? '#e8f5e9' : '#fafafa') + '; border-radius: 4px;">';
+        
+        // Checkbox (click stops propagation so it doesn't toggle)
+        html += '<input type="checkbox" class="slide-checkbox" data-slide="' + slideNum + '" onchange="updateSelectionCount()" onclick="event.stopPropagation()" style="margin-right: 12px; width: 18px; height: 18px; cursor: pointer;">';
+        
+        // Slide info (clickable to expand)
+        html += '<div onclick="toggleSlide(' + slideNum + ')" style="cursor: pointer; flex: 1; display: flex; justify-content: space-between; align-items: center;">';
+        
+        // Flex column container to stack the badge and the text
+        html += '<div style="display: flex; flex-direction: column; gap: 4px;">'; 
+        
+        // Top row: Slide Badge and Linked Status
+        html += '<div style="display: flex; align-items: center;">'; 
+        html += '<span class="slide-number" style="margin: 0;">Slide ' + slideNum + '</span>';
+        if (hasLinked) {
+          html += '<span style="color: #2e7d32; font-size: 11px; margin-left: 8px; font-weight: bold;">✓ Linked</span>';
+        }
+        html += '</div>'; // Closes Top row
+        
+        // Bottom row: Image count tucked neatly underneath
+        html += '<div style="color: #666; font-size: 11px; padding-left: 4px;">(' + slideImages.length + ' image' + (slideImages.length > 1 ? 's' : '') + ')</div>';
+        
+        html += '</div>'; // End flex column
+        
+        // The expand arrow
+        html += '<div id="toggle_' + slideNum + '" style="font-size: 18px; font-weight: bold; color: #666;">▶</div>';
+        html += '</div>'; // End Slide info container
+        
+        html += '</div>'; // <--- CRITICAL: Closes the COLLAPSED VIEW header container!
+        
+        // EXPANDED VIEW - Details (hidden by default)
+        html += '<div id="slide_' + slideNum + '" style="display: none; padding-top: 10px;">';
+        
+        // List all images on this slide
+        slideImages.forEach(function(img, index) {
+          var linkedConfig = imageLinks[img.objectId] || null;
+          var displayDescription = getDisplayDescription(img.description);
+          
+          // Image section
+          html += '<div style="background: #fafafa; padding: 10px; border-radius: 4px; margin-bottom: 10px; border-left: 3px solid ' + (linkedConfig ? '#34a853' : '#ddd') + ';">';
+          
+          // Image title
+          if (img.title && img.title !== 'Untitled') {
+            html += '<div style="font-weight: 600; font-size: 13px; color: #333; margin-bottom: 6px;">';
+            html += '🖼️ ' + img.title;
+            html += '</div>';
+          } else {
+            html += '<div style="font-weight: 600; font-size: 13px; color: #666; margin-bottom: 6px;">';
+            html += '🖼️ Image ' + (index + 1);
+            html += '</div>';
+          }
+          
+          if (displayDescription) {
+            html += '<div style="margin-bottom: 8px;">';
+            html += '<strong style="font-size: 11px; color: #555;">Description:</strong> ';
+            html += '<span style="font-size: 11px; color: #444;">' + escapeHtml(displayDescription) + '</span>';
+            html += '</div>';
+          }
+          
+          // Image properties
+          html += '<div style="font-size: 11px; color: #666; margin-bottom: 10px;">';
+          html += 'Size: ' + Math.round(img.width) + ' × ' + Math.round(img.height) + ' px';
+          html += '</div>';
+          
+          // Config dropdown
+          html += '<div style="margin-bottom: 8px;">';
+          html += '<select id="config_' + img.objectId + '" class="inline" onchange="linkImageToConfig(&quot;' + img.objectId + '&quot;)" style="width: 100%; margin: 0;">';
+          html += '<option value="">🔗 Select Config</option>';
+          
+          allConfigs.forEach(function(config) {
+            var selected = linkedConfig === config.id ? ' selected' : '';
+            html += '<option value="' + config.id + '"' + selected + '>' + config.name + '</option>';
+          });
+          
+          html += '</select>';
+          html += '</div>';
+          
+          // Sync button at the bottom
+          html += '<button class="btn-success" onclick="syncSingleImage(&quot;' + img.objectId + '&quot;)" style="width: 100%; margin-top: 8px;">';
+          html += '🔄 Sync';
+          html += '</button>';
+          
+          html += '</div>'; // End image section
+        });
+        
+        
+        html += '</div>'; // End expanded view
+        html += '</div>'; // End slide container
+      });
+      
+      container.innerHTML = html;
+      updateSelectionCount();
+    }
+    
+    /**
+     * Toggle slide expand/collapse
+     */
+    function toggleSlide(slideNumber) {
+      var content = document.getElementById('slide_' + slideNumber);
+      var toggle = document.getElementById('toggle_' + slideNumber);
+      
+      if (content.style.display === 'none') {
+        // Expand
+        content.style.display = 'block';
+        toggle.textContent = '▼';
+      } else {
+        // Collapse
+        content.style.display = 'none';
+        toggle.textContent = '▶';
+      }
+    }
+    
+    /**
+     * Toggle select all checkboxes
+     */
+    function toggleSelectAll() {
+      var selectAll = document.getElementById('selectAll');
+      var checkboxes = document.querySelectorAll('.slide-checkbox');
+      
+      checkboxes.forEach(function(checkbox) {
+        checkbox.checked = selectAll.checked;
+      });
+      
+      updateSelectionCount();
+    }
+    
+    /**
+     * Update selection count display
+     */
+    function updateSelectionCount() {
+      var checkboxes = document.querySelectorAll('.slide-checkbox:checked');
+      var count = checkboxes.length;
+      var countDiv = document.getElementById('selectionCount');
+      
+      if (countDiv) {
+        countDiv.textContent = count + ' selected';
+        if (count > 0) {
+          countDiv.style.color = '#2e7d32';
+          countDiv.style.fontWeight = '600';
+        } else {
+          countDiv.style.color = '#666';
+          countDiv.style.fontWeight = 'normal';
+        }
+      }
+      
+      // Update "Select All" checkbox state
+      var selectAll = document.getElementById('selectAll');
+      var allCheckboxes = document.querySelectorAll('.slide-checkbox');
+      if (selectAll && allCheckboxes.length > 0) {
+        selectAll.checked = (count === allCheckboxes.length);
+      }
+    }
+    
+    function formatDate(dateValue) {
+      if (!dateValue) return 'N/A';
+      
+      var date = new Date(dateValue);
+      if (isNaN(date.getTime())) return 'N/A';
+      
+      var options = { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      };
+      
+      return date.toLocaleDateString('en-US', options);
+    }
+
+    function escapeHtml(text) {
+      if (text == null) return '';
+
+      return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function getDisplayDescription(rawDescription) {
+      if (!rawDescription) return '';
+
+      return rawDescription
+        .replace(/##SYNC##.*?##SYNC##/g, '')
+        .trim();
+    }
+    
+    function linkImageToConfig(objectId) {
+      var selectEl = document.getElementById('config_' + objectId);
+      var configId = selectEl ? selectEl.value : '';
+      var previousConfigId = imageLinks[objectId] || '';
+      
+      console.log('Linking image ' + objectId + ' to config ' + configId);
+
+      if (selectEl) {
+        selectEl.disabled = true;
+      }
+      
+      if (configId) {
+        imageLinks[objectId] = configId;
+        
+        google.script.run
+          .withSuccessHandler(function() {
+            console.log('Successfully linked ' + objectId + ' to ' + configId);
+            if (selectEl) {
+              selectEl.disabled = false;
+            }
+            showSyncStatus('✅ Link saved', 'success');
+          })
+          .withFailureHandler(function(error) {
+            imageLinks[objectId] = previousConfigId;
+            if (selectEl) {
+              selectEl.value = previousConfigId;
+              selectEl.disabled = false;
+            }
+            showSyncStatus('❌ Failed to save link: ' + error, 'error');
+          })
+          .saveImageConfigLink(objectId, configId);
+      } else {
+        delete imageLinks[objectId];
+        
+        google.script.run
+          .withSuccessHandler(function() {
+            if (selectEl) {
+              selectEl.disabled = false;
+            }
+            showSyncStatus('✅ Link removed', 'success');
+          })
+          .withFailureHandler(function(error) {
+            if (previousConfigId) {
+              imageLinks[objectId] = previousConfigId;
+            }
+            if (selectEl) {
+              selectEl.value = previousConfigId;
+              selectEl.disabled = false;
+            }
+            showSyncStatus('❌ Failed to remove link: ' + error, 'error');
+          })
+          .removeImageConfigLink(objectId);
+      }
+    }
+
+    function syncSingleImage(objectId) {
+      console.log('🔵 === SYNC BUTTON CLICKED ===');
+      console.log('🔵 Client function: syncSingleImage()');
+      console.log('🔵 Object ID: ' + objectId);
+
+      var configId = imageLinks[objectId];
+      console.log('🔵 Config ID from imageLinks: ' + configId);
+      
+      if (!configId) {
+        console.error('🔴 No config linked to this image!');
+        alert('Please select a config for this image first');
+        return;
+      }
+
+      var sharedSettingsError = validateSharedSettingsForConfig(configId);
+      if (sharedSettingsError) {
+        alert(sharedSettingsError);
+        return;
+      }
+
+      lockSyncUI('🖼️ Syncing one image. Hang tight...');
+      
+      // Find the image container
+      var button = document.querySelector('button[onclick*="' + objectId + '"]');
+      var imageContainer = button ? button.closest('[style*="background: #fafafa"]') : null;
+      
+      // LOADING STATE - Grey
+      if (imageContainer) {
+        imageContainer.style.background = '#e0e0e0';
+        imageContainer.style.borderLeftColor = '#9e9e9e';
+      }
+      if (button) {
+        button.disabled = true;
+        button.innerHTML = '⏳ Syncing...';
+        button.style.background = '#9e9e9e';
+      }
+      
+      showSyncStatus('☁️ Uploading PDF → Cloud Storage → converting → downloading PNG...', 'info');
+      
+      console.log('🔵 Calling server: syncImageFromConfig(' + objectId + ', ' + configId + ')');
+
+      persistSharedSettingsThen(function(saveError) {
+        if (saveError) {
+          if (imageContainer) {
+            imageContainer.style.background = '#fafafa';
+            imageContainer.style.borderLeftColor = '#ddd';
+          }
+          if (button) {
+            button.innerHTML = '🔄 Sync';
+            button.style.background = '#34a853';
+            button.disabled = false;
+          }
+          unlockSyncUI();
+          return;
+        }
+
+        google.script.run
+          .withSuccessHandler(function(result) {
+            console.log('🟢 === SERVER RESPONSE ===');
+            console.log('🟢 Success:', result.success);
+            console.log('🟢 Message:', result.message);
+            console.log('🟢 Full result:', result);
+            if (result.success) {
+              if (imageContainer) {
+                imageContainer.style.background = '#c8e6c9';
+                imageContainer.style.borderLeftColor = '#2e7d32';
+              }
+              if (button) {
+                button.innerHTML = '✅ Synced!';
+                button.style.background = '#2e7d32';
+              }
+
+              showSyncStatus('✅ Image synced successfully!', 'success');
+
+              if (result.newObjectId && result.newObjectId !== objectId) {
+                delete imageLinks[objectId];
+                imageLinks[result.newObjectId] = configId;
+              }
+
+              setTimeout(function() {
+                if (imageContainer) {
+                  imageContainer.style.background = '#e8f5e9';
+                  imageContainer.style.borderLeftColor = '#34a853';
+                }
+                if (button) {
+                  button.innerHTML = '🔄 Sync';
+                  button.style.background = '#34a853';
+                  button.disabled = false;
+                }
+
+                setTimeout(function() {
+                  unlockSyncUI();
+                  refreshImages();
+                }, 500);
+              }, 2000);
+            } else {
+              if (imageContainer) {
+                imageContainer.style.background = '#ffcdd2';
+                imageContainer.style.borderLeftColor = '#c62828';
+              }
+              if (button) {
+                button.innerHTML = '❌ Failed';
+                button.style.background = '#c62828';
+              }
+
+              showSyncStatus('❌ ' + result.message, 'error');
+
+              setTimeout(function() {
+                if (imageContainer) {
+                  imageContainer.style.background = '#fafafa';
+                  imageContainer.style.borderLeftColor = '#ddd';
+                }
+                if (button) {
+                  button.innerHTML = '🔄 Sync';
+                  button.style.background = '#34a853';
+                  button.disabled = false;
+                }
+                unlockSyncUI();
+              }, 3000);
+            }
+          })
+          .withFailureHandler(function(error) {
+            console.error('🔴 === SERVER ERROR ===');
+            console.error('🔴 Error:', error);
+            console.error('🔴 Message:', error.message);
+            console.error('🔴 Stack:', error.stack);
+            if (imageContainer) {
+              imageContainer.style.background = '#ffcdd2';
+              imageContainer.style.borderLeftColor = '#c62828';
+            }
+            if (button) {
+              button.innerHTML = '❌ Error';
+              button.style.background = '#c62828';
+            }
+
+            showSyncStatus('❌ Error: ' + error, 'error');
+
+            setTimeout(function() {
+              if (imageContainer) {
+                imageContainer.style.background = '#fafafa';
+                imageContainer.style.borderLeftColor = '#ddd';
+              }
+              if (button) {
+                button.innerHTML = '🔄 Sync';
+                button.style.background = '#34a853';
+                button.disabled = false;
+              }
+              unlockSyncUI();
+            }, 3000);
+          })
+          .syncImageFromConfig(objectId, configId);
+      });
+    }
+    
+    function showStatus(message, type) {
+      var statusDiv = document.getElementById('status');
+      statusDiv.textContent = message;
+      statusDiv.className = 'status ' + type;
+    }
+    
+    function showSyncStatus(message, type) {
+      var statusDiv = document.getElementById('syncStatus');
+      statusDiv.innerHTML = '<div class="status ' + type + '">' + message + '</div>';
+    }
+    
+    /**
+     * Sync all images on a specific slide with visual feedback
+     */
+    /**
+     * Sync all images on a specific slide (Sequentially)
+     */
+    function syncAllImagesOnSlide(slideNumber) {
+      var syncAllButton = document.querySelector('button[onclick*="syncAllImagesOnSlide(' + slideNumber + ')"]');
+      var slideContainer = syncAllButton ? syncAllButton.closest('.image-item') : null;
+      
+      google.script.run
+        .withSuccessHandler(function(result) {
+          if (result.success) {
+            var slideImages = result.images.filter(function(img) {
+              return img.slideNumber === slideNumber;
+            });
+            
+            var linkedImages = slideImages.filter(function(img) {
+              return imageLinks[img.objectId];
+            });
+            
+            if (linkedImages.length === 0) {
+              alert('No images are linked to configs on slide ' + slideNumber);
+              return;
+            }
+            
+            if (!confirm('Sync ' + linkedImages.length + ' image(s) on slide ' + slideNumber + '?')) {
+              return;
+            }
+
+            for (var slideValidationIndex = 0; slideValidationIndex < linkedImages.length; slideValidationIndex++) {
+              var slideValidationConfigId = imageLinks[linkedImages[slideValidationIndex].objectId];
+              var slideValidationError = validateSharedSettingsForConfig(slideValidationConfigId);
+              if (slideValidationError) {
+                alert(slideValidationError);
+                return;
+              }
+            }
+
+            lockSyncUI('📚 Syncing all images on slide ' + slideNumber + '...');
+            
+            if (slideContainer) {
+              slideContainer.style.background = '#e0e0e0';
+              slideContainer.style.borderLeftColor = '#9e9e9e';
+            }
+            if (syncAllButton) {
+              syncAllButton.disabled = true;
+              syncAllButton.innerHTML = '⏳ Syncing ' + linkedImages.length + ' images...';
+              syncAllButton.style.background = '#9e9e9e';
+            }
+            
+            showSyncStatus('Syncing ' + linkedImages.length + ' images on slide ' + slideNumber + '...', 'info');
+            
+            persistSharedSettingsThen(function(saveError) {
+              if (saveError) {
+                if (slideContainer) {
+                  slideContainer.style.background = '#fafafa';
+                  slideContainer.style.borderLeftColor = '#ddd';
+                }
+                if (syncAllButton) {
+                  syncAllButton.disabled = false;
+                  syncAllButton.innerHTML = '🔄 Sync All on Slide';
+                  syncAllButton.style.background = '#34a853';
+                }
+                unlockSyncUI();
+                return;
+              }
+
+              var errors = [];
+              var currentIndex = 0;
+
+              function processNextSlideImage() {
+                if (currentIndex >= linkedImages.length) {
+                  if (errors.length === 0) {
+                    if (slideContainer) {
+                      slideContainer.style.background = '#c8e6c9';
+                      slideContainer.style.borderLeftColor = '#2e7d32';
+                    }
+                    if (syncAllButton) {
+                      syncAllButton.innerHTML = '✅ All ' + linkedImages.length + ' images synced!';
+                      syncAllButton.style.background = '#2e7d32';
+                    }
+                    showSyncStatus('✅ Synced all ' + linkedImages.length + ' images on slide ' + slideNumber, 'success');
+                  } else {
+                    if (slideContainer) {
+                      slideContainer.style.background = '#fff3cd';
+                      slideContainer.style.borderLeftColor = '#ff9800';
+                    }
+                    if (syncAllButton) {
+                      syncAllButton.innerHTML = '⚠️ ' + (linkedImages.length - errors.length) + '/' + linkedImages.length + ' synced';
+                      syncAllButton.style.background = '#ff9800';
+                    }
+                    showSyncStatus('⚠️ Synced ' + (linkedImages.length - errors.length) + '/' + linkedImages.length + ' images. ' + errors.length + ' failed.', 'error');
+                  }
+
+                  unlockSyncUI();
+                  setTimeout(function() { refreshImages(); }, 2000);
+                  return;
+                }
+
+                var img = linkedImages[currentIndex];
+                var objectId = img.objectId;
+                var configId = imageLinks[objectId];
+
+                var imgButton = document.querySelector('button[onclick*="syncSingleImage(\'' + objectId + '\')"]');
+                var imgContainer = imgButton ? imgButton.closest('[style*="background"]') : null;
+
+                if (imgContainer) {
+                  imgContainer.style.background = '#e0e0e0';
+                  imgContainer.style.borderLeftColor = '#9e9e9e';
+                }
+                if (imgButton) {
+                  imgButton.disabled = true;
+                  imgButton.innerHTML = '⏳ Syncing...';
+                  imgButton.style.background = '#9e9e9e';
+                }
+
+                google.script.run
+                  .withSuccessHandler(function(syncResult) {
+                    if (syncResult.success) {
+                      if (imgContainer) {
+                        imgContainer.style.background = '#c8e6c9';
+                        imgContainer.style.borderLeftColor = '#2e7d32';
+                      }
+                      if (imgButton) {
+                        imgButton.innerHTML = '✅ Synced!';
+                        imgButton.style.background = '#2e7d32';
+                      }
+                      if (syncResult.newObjectId && syncResult.newObjectId !== objectId) {
+                        delete imageLinks[objectId];
+                        imageLinks[syncResult.newObjectId] = configId;
+                      }
+                    } else {
+                      errors.push(objectId + ': ' + syncResult.message);
+                      if (imgContainer) {
+                        imgContainer.style.background = '#ffcdd2';
+                        imgContainer.style.borderLeftColor = '#c62828';
+                      }
+                      if (imgButton) {
+                        imgButton.innerHTML = '❌ Failed';
+                        imgButton.style.background = '#c62828';
+                      }
+                    }
+                    currentIndex++;
+                    processNextSlideImage();
+                  })
+                  .withFailureHandler(function(error) {
+                    errors.push(objectId + ': ' + error);
+                    if (imgContainer) {
+                      imgContainer.style.background = '#ffcdd2';
+                      imgContainer.style.borderLeftColor = '#c62828';
+                    }
+                    if (imgButton) {
+                      imgButton.innerHTML = '❌ Error';
+                      imgButton.style.background = '#c62828';
+                    }
+                    currentIndex++;
+                    processNextSlideImage();
+                  })
+                  .syncImageFromConfig(objectId, configId);
+              }
+
+              processNextSlideImage();
+            });
+          }
+        })
+        .withFailureHandler(function(error) {
+          showSyncStatus('❌ Error loading slide images: ' + error, 'error');
+        })
+        .getAllImagesFromPresentation();
+    }
+    
+    function triggerRefresh() {
+      if (refreshInProgress) {
+        return;
+      }
+
+      var btn = document.getElementById('refreshBtn');
+      refreshInProgress = true;
+      lockSyncUI('🔄 Refreshing configs and images...');
+
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '⏳ Loading...';
+      }
+
+      refreshImages(); // This automatically fetches configs, then images
+    }
+
+    // ============================================
+    // INITIALIZATION
+    // ============================================
+    
+    setTimeout(function() {
+      google.script.run
+        .withSuccessHandler(function(sheetId) {
+          if (sheetId) {
+            document.getElementById('configSheetId').value = sheetId;
+          }
+          checkConfigStatus();
+        })
+        .withFailureHandler(function() {
+          checkConfigStatus();
+        })
+        .getConfigSheetId();
+    }, 500);
+    
+    console.log('=== INITIALIZATION COMPLETE ===');
+  </script>
+</body>
+</html>

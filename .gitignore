@@ -1,0 +1,16 @@
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+.env
+.env.*
+
+__pycache__/
+*.pyc
+
+.clasp.json
+.gas/
+
+node_modules/
+dist/
+build/
