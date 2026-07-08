@@ -1,4 +1,4 @@
-![1783516357251](image/README/1783516357251.png)
+![Sheets2SlidesLogo](./docs/Sheet2Slides_logo.png)
 
 
 
